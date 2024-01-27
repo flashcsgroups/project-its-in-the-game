@@ -1,33 +1,20 @@
-
--- Waits for the child of the specified parent
 local function WaitForChild(parent, childName)
 	while not parent:FindFirstChild(childName) do parent.ChildAdded:wait() end
 	return parent[childName]
 end
 
 ----- TOOL DATA -----
--- How much damage a bullet does
 local Damage = 30
--- How many times per second the gun can fire
 local FireRate = 1 / 6
--- The maximum distance the can can shoot, this value should never go above 1000
 local Range = 350
--- In radians the minimum accuracy penalty
 local MinSpread = 0.005
--- In radian the maximum accuracy penalty
 local MaxSpread = 0.05
--- Number of bullets in a clip
 local ClipSize = 30
--- DefaultValue for spare ammo
 local SpareAmmo = 999
--- The amount the aim will increase or decrease by
--- decreases this number reduces the speed that recoil takes effect
 local AimInaccuracyStepAmount = .15
--- Time it takes to reload weapon
 local ReloadTime = 2.5
 ----------------------------------------
 
--- Colors
 local FriendlyReticleColor = Color3.new(0, 1, 0)
 local EnemyReticleColor	= Color3.new(1, 0, 0)
 local NeutralReticleColor	= Color3.new(1, 1, 1)
@@ -44,7 +31,6 @@ local Reloading = false
 local IsShooting = false
 local Pitch = script.Parent.Handle.FireSound
 
--- Player specific convenience variables
 local MyPlayer = nil
 local MyCharacter = nil
 local MyHumanoid = nil
@@ -73,9 +59,7 @@ local LastSpreadUpdate = time()
 
 local flare = script.Parent:WaitForChild("Flare")
 
--- this is a dummy object that holds the flash made when the gun is fired
 local FlashHolder = nil
-
 
 local WorldToCellFunction = Workspace.Terrain.WorldToCellPreferSolid
 local GetCellFunction = Workspace.Terrain.GetCell
@@ -99,13 +83,11 @@ function RayIgnoreCheck(hit, pos)
 	return false
 end
 
--- @preconditions: vec should be a unit vector, and 0 < rayLength <= 1000
 function RayCast(startPos, vec, rayLength)
 	local hitObject, hitPos = game.Workspace:FindPartOnRay(Ray.new(startPos + (vec * .01), vec * rayLength), Handle)
 	if hitObject and hitPos then
 		local distance = rayLength - (hitPos - startPos).magnitude
 		if RayIgnoreCheck(hitObject, hitPos) and distance > 0 then
-			-- there is a chance here for potential infinite recursion
 			return RayCast(hitPos, vec, distance)
 		end
 	end
@@ -115,7 +97,6 @@ end
 
 
 function TagHumanoid(humanoid, player)
-	-- Add more tags here to customize what tags are available.
 	while humanoid:FindFirstChild('creator') do
 		humanoid:FindFirstChild('creator'):Destroy()
 	end 
@@ -185,12 +166,10 @@ local function Reload()
 			end
 			script.Parent.Handle.Reload:Play()
 			wait(ReloadTime)
-			-- Only use as much ammo as you have
 			local ammoToUse = math.min(ClipSize - AmmoInClip, SpareAmmo)
 			AmmoInClip = AmmoInClip + ammoToUse
 			SpareAmmo = SpareAmmo - ammoToUse
 			UpdateAmmo(AmmoInClip)
-			--WeaponGui.Reload.Visible = false
 			if ReloadTrack then
 				ReloadTrack:Stop()
 			end
@@ -217,18 +196,15 @@ function OnFire()
 				Handle.FireSound:Play()
 				Handle.Flash.Enabled = true
 				flare.MuzzleFlash.Enabled = true
-				--Handle.Smoke.Enabled=true --This is optional
 			end
 			if MyMouse then
 				local targetPoint = MyMouse.Hit.p
 				local shootDirection = (targetPoint - Handle.Position).unit
-				-- Recoil
 				shootDirection = CFrame.Angles((0.5 - math.random()) * 2 * Spread,
 																(0.5 - math.random()) * 2 * Spread,
 																(0.5 - math.random()) * 2 * Spread) * shootDirection
 				local hitObject, bulletPos = RayCast(Handle.Position, shootDirection, Range)
 				local bullet
-				-- Create a bullet here
 				if hitObject then
 					bullet = CreateBullet(bulletPos)
 				end
@@ -243,7 +219,6 @@ function OnFire()
 								bullet:Destroy()
 								bullet = nil
 								WeaponGui.Crosshair.Hit:Play()
-								--bullet.Transparency = 1
 							end
 							Spawn(UpdateTargetHit)
 						end
@@ -257,10 +232,8 @@ function OnFire()
 		Handle.Flash.Enabled = false
 		IsShooting = false
 		flare.MuzzleFlash.Enabled = false
-		--Handle.Smoke.Enabled=false --This is optional
 		if AmmoInClip == 0 then
 			Handle.Tick:Play()
-			--WeaponGui.Reload.Visible = true
 			Reload()
 		end
 		if RecoilTrack then
@@ -352,7 +325,6 @@ function OnEquipped(mouse)
 	end
 
 	if MyMouse then
-		-- Disable mouse icon
 		MyMouse.Icon = "http://www.roblox.com/asset/?id=18662154"
 		MyMouse.Button1Down:connect(OnMouseDown)
 		MyMouse.Button1Up:connect(OnMouseUp)
@@ -361,7 +333,6 @@ function OnEquipped(mouse)
 end
 
 
--- Unequip logic here
 function OnUnequipped()
 	Handle.UnequipSound:Play()
 	Handle.EquipSound:Stop()
